@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VulnBook — намеренно уязвимое приложение</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f1420;
+    color: #e6edf3;
+  }
+
+  h1 { font-size: 22px; margin: 0 0 4px; }
+
+  .sub { color: #8b98a9; font-size: 13px; margin-bottom: 18px; }
+
+  .warn {
+    background: #3b1d1d;
+    border-left: 4px solid #e5534b;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 22px;
+    color: #ffb4ae;
+  }
+
+  .grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  }
+
+  .card {
+    background: #161b26;
+    border: 1px solid #232c3d;
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .card h2 { font-size: 15px; margin: 0 0 6px; }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #3b1d1d;
+    color: #ff9c94;
+    margin-bottom: 10px;
+  }
+
+  .hint { font-size: 12px; color: #7d8a9c; margin: 0 0 10px; }
+
+  input, textarea, button {
+    font: inherit;
+    font-size: 14px;
+    width: 100%;
+    border-radius: 7px;
+    border: 1px solid #2c374b;
+    background: #0e131c;
+    color: #e6edf3;
+    padding: 9px 11px;
+    margin-bottom: 8px;
+  }
+
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+  }
+
+  textarea { resize: vertical; min-height: 62px; }
+
+  button {
+    background: #2563eb;
+    border-color: #2563eb;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background .15s;
+  }
+
+  button:hover { background: #1d4ed8; }
+
+  button.ghost {
+    background: transparent;
+    border-color: #2c374b;
+    font-weight: 500;
+  }
+
+  button.ghost:hover { background: #1b2231; }
+
+  .out {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px;
+    background: #0e131c;
+    border: 1px solid #232c3d;
+    border-radius: 7px;
+    padding: 10px;
+    min-height: 38px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  #comments { margin-top: 12px; }
+
+  .comment {
+    border-bottom: 1px solid #232c3d;
+    padding: 8px 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .comment:last-child { border-bottom: none; }
+
+  .comment b { color: #7ee787; }
+</style>
+</head>
+<body>
+
+  <h1>VulnBook 🐛</h1>
+  <div class="sub">Учебное приложение с тремя намеренными уязвимостями</div>
+
+  <div class="warn">
+    ⚠️ Запускайте только локально. Код специально небезопасен и не должен
+    попадать в интернет или продакшн.
+  </div>
+
+  <div class="grid">
+
+    <!-- ── Уязвимость 1: хранение секретов в localStorage ── -->
+    <div class="card">
+      <span class="tag">Уязвимость 1</span>
+      <h2>Вход в аккаунт</h2>
+      <p class="hint">Пароль сохраняется в localStorage в открытом виде.</p>
+
+      <input id="login" placeholder="Логин" autocomplete="off">
+      <input id="pass" type="password" placeholder="Пароль">
+      <button onclick="saveCreds()">Войти</button>
+
+      <div class="out" id="loginOut">—</div>
+    </div>
+
+    <!-- ── Уязвимость 2: XSS через innerHTML ── -->
+    <div class="card">
+      <span class="tag">Уязвимость 2</span>
+      <h2>Гостевая книга</h2>
+      <p class="hint">Комментарии вставляются через innerHTML без экранирования.</p>
+
+      <input id="name" placeholder="Имя">
+      <textarea id="text" placeholder="Комментарий"></textarea>
+      <button onclick="addComment()">Отправить</button>
+      <button class="ghost" onclick="clearComments()">Очистить</button>
+
+      <div id="comments"></div>
+    </div>
+
+    <!-- ── Уязвимость 3: инъекция кода через eval ── -->
+    <div class="card">
+      <span class="tag">Уязвимость 3</span>
+      <h2>Калькулятор</h2>
+      <p class="hint">Выражение выполняется через eval().</p>
+
+      <input id="expr" placeholder="2+2" autocomplete="off">
+      <button onclick="calc()">Вычислить</button>
+
+      <div class="out" id="calcOut">—</div>
+    </div>
+
+  </div>
+
+<script>
+/* =========================================================
+   УЯЗВИМОСТЬ 1. Sensitive Data Exposure
+   Пароль пользователя лежит в localStorage в чистом виде.
+   Любой скрипт на странице (в т.ч. внедрённый через XSS)
+   может его прочитать: localStorage.getItem('password')
+   ========================================================= */
+function saveCreds() {
+  const login = document.getElementById('login').value.trim();
+  const pass  = document.getElementById('pass').value;
+
+  if (!login || !pass) return;
+
+  localStorage.setItem('user', login);
+  localStorage.setItem('password', pass);   // ❌ НИКОГДА так не делайте
+
+  document.getElementById('loginOut').textContent =
+    'Вы вошли как ' + login + ' (пароль сохранён в localStorage)';
+}
+
+/* =========================================================
+   УЯЗВИМОСТЬ 2. Stored XSS
+   Пользовательский ввод попадает в разметку через innerHTML,
+   поэтому любой HTML/JS в комментарии будет выполнен браузером.
+   ========================================================= */
+let comments = JSON.parse(localStorage.getItem('comments') || '[]');
+
+function renderComments() {
+  const box = document.getElementById('comments');
+
+  // ❌ innerHTML + данные пользователя = XSS
+  box.innerHTML = comments
+    .map(c => `<div class="comment"><b>${c.name}</b>: ${c.text}</div>`)
+    .join('');
+}
+
+function addComment() {
+  const nameEl = document.getElementById('name');
+  const textEl = document.getElementById('text');
+
+  const name = nameEl.value.trim();
+  const text = textEl.value.trim();
+  if (!name || !text) return;
+
+  comments.push({ name, text });
+  localStorage.setItem('comments', JSON.stringify(comments));
+
+  nameEl.value = '';
+  textEl.value = '';
+  renderComments();
+}
+
+function clearComments() {
+  comments = [];
+  localStorage.removeItem('comments');
+  renderComments();
+}
+
+/* =========================================================
+   УЯЗВИМОСТЬ 3. Code Injection через eval()
+   eval выполняет произвольный JS-код из поля ввода.
+   ========================================================= */
+function calc() {
+  const expr = document.getElementById('expr').value;
+  const out  = document.getElementById('calcOut');
+
+  try {
+    const result = eval(expr);   // ❌ произвольное исполнение кода
+    out.textContent = String(result);
+  } catch (e) {
+    out.textContent = 'Ошибка: ' + e.message;
+  }
+}
+
+/* первичная отрисовка */
+renderComments();
+</script>
+
+</body>
+</html>
